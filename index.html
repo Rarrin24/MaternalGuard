@@ -4,92 +4,131 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>Patient record | SMART Patient App</title>
+  <title>MaternalGuard | Your health record</title>
   <script src="https://cdn.jsdelivr.net/npm/fhirclient@3.0.1/bundle/fhir-client.js"></script>
   <style>
-    :root { color-scheme: light; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #172b3a; background: #f4f7f9; }
+    :root { color-scheme: light; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #18352f; background: #f5f8f6; }
     * { box-sizing: border-box; }
-    body { margin: 0; line-height: 1.55; font-size: 1rem; }
-    main { width: min(100% - 2rem, 48rem); margin: 0 auto; padding: 2rem 0 3rem; }
-    h1 { margin: 0 0 1.25rem; font-size: clamp(1.7rem, 5vw, 2.2rem); line-height: 1.2; }
-    h2 { margin: 0 0 1rem; font-size: 1.3rem; }
-    section { margin: 1.25rem 0; padding: 1.25rem; background: #fff; border: 1px solid #c9d5dd; border-radius: .65rem; }
-    dl { display: grid; grid-template-columns: minmax(7rem, 1fr) 2fr; gap: .45rem 1rem; margin: 0; }
+    body { margin: 0; font-size: 1rem; line-height: 1.6; }
+    a { color: #145b4b; text-underline-offset: .18em; }
+    a:focus-visible { outline: 3px solid #126b8e; outline-offset: 3px; border-radius: 2px; }
+    .skip-link { position: absolute; left: -9999px; top: .5rem; z-index: 5; padding: .6rem; background: white; }
+    .skip-link:focus { left: .5rem; }
+    header { background: #e8f1ec; border-bottom: 1px solid #cbd9d1; }
+    .header-inner, main, footer { width: min(100% - 2rem, 64rem); margin: 0 auto; }
+    .header-inner { padding: 1.15rem 0; }
+    .brand { margin: 0; font-size: 1.4rem; font-weight: 750; letter-spacing: .01em; }
+    .tagline { margin: .1rem 0 0; color: #36574d; }
+    main { padding: 1.5rem 0 2.5rem; }
+    h1 { margin: 0 0 .25rem; font-size: clamp(1.65rem, 5vw, 2.2rem); line-height: 1.25; }
+    h2 { margin: 0 0 .7rem; font-size: 1.3rem; line-height: 1.35; }
+    h3 { margin: 0 0 .25rem; font-size: 1.05rem; }
+    section { margin: 1.25rem 0; padding: clamp(1rem, 3vw, 1.5rem); background: #fff; border: 1px solid #cbd9d1; border-radius: .75rem; }
+    .intro { margin: 0 0 1rem; color: #36574d; }
+    .identity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .8rem; margin: 0; }
+    .identity-item { padding: .8rem; background: #f6f9f7; border-radius: .5rem; }
     dt { font-weight: 650; }
-    dd { margin: 0; overflow-wrap: anywhere; }
-    .results { display: grid; gap: .75rem; }
-    .result { margin: 0; padding: .9rem 1rem; border: 1px solid #d4dee5; border-radius: .5rem; }
-    .result dt { margin-bottom: .15rem; }
-    .result dd { font-size: 1.1rem; font-weight: 600; }
-    .result-date { display: block; margin-top: .2rem; font-size: .9rem; font-weight: 400; }
-    .status { padding: .75rem 1rem; border-left: .25rem solid #365d75; background: #edf4f8; }
-    .error { border-left-color: #8a2d2d; background: #fff1f0; }
-    a { color: #064f78; }
-    a:focus-visible { outline: 3px solid #1479ad; outline-offset: 3px; }
+    dd { margin: .12rem 0 0; overflow-wrap: anywhere; }
+    .measurement-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: .8rem; margin: 1rem 0 0; }
+    .measurement { margin: 0; padding: 1rem; border: 1px solid #d4dfd9; border-radius: .6rem; }
+    .measurement dd { font-size: 1.15rem; font-weight: 650; }
+    .date { display: block; margin-top: .2rem; font-size: .92rem; font-weight: 400; color: #435b52; }
+    .status { margin: .75rem 0; padding: .75rem 1rem; border-left: .25rem solid #315f50; background: #edf5f0; }
+    .error { border-left-color: #822c2c; background: #fff2f0; color: #542020; }
+    .planned { display: inline-block; margin: .3rem 0 .6rem; padding: .12rem .5rem; border: 1px solid #49685b; border-radius: 999px; font-size: .86rem; font-weight: 650; }
+    ul { padding-left: 1.3rem; }
+    li + li { margin-top: .25rem; }
+    .safety { border-color: #b9c9c0; background: #f0f5f2; }
+    footer { padding: 0 0 2rem; }
     [hidden] { display: none !important; }
-    @media (max-width: 30rem) {
-      main { width: min(100% - 1rem, 48rem); padding-top: 1rem; }
-      section { padding: 1rem; }
-      dl { grid-template-columns: 1fr; gap: .1rem; }
-      dd { margin-bottom: .6rem; }
-    }
+    @media (max-width: 32rem) { .header-inner, main, footer { width: min(100% - 1rem, 64rem); } main { padding-top: 1rem; } }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Patient record</h1>
-
-    <section id="signed-out">
-      <p>Sign in as the patient to see your record from the SMART sandbox.</p>
-      <ul>
-        <li><a href="./launch.html">Sign in</a></li>
-        <li><a href="./health.html">Health check</a></li>
-      </ul>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header>
+    <div class="header-inner">
+      <p class="brand">MaternalGuard</p>
+      <p class="tagline">Your Voice. Your Health. Your Follow-Up.</p>
+    </div>
+  </header>
+  <main id="main-content">
+    <section id="signed-out" aria-labelledby="welcome-heading">
+      <h1 id="welcome-heading">Your health record</h1>
+      <p>Sign in through the SMART sandbox to view information available for your patient record.</p>
+      <nav aria-label="Account and health links">
+        <ul><li><a href="./launch.html">Sign in</a></li><li><a href="./health.html">Health check</a></li></ul>
+      </nav>
     </section>
 
-    <section id="record" hidden aria-labelledby="identity-heading">
-      <h2 id="identity-heading">Patient identity</h2>
-      <dl>
-        <dt>Name</dt><dd id="name">Not recorded</dd>
-        <dt>Gender</dt><dd id="gender">Not recorded</dd>
-        <dt>Birth date</dt><dd id="birth-date">Not recorded</dd>
-        <dt>Age</dt><dd id="age">Not recorded</dd>
-      </dl>
-    </section>
+    <div id="signed-in-content" hidden>
+      <h1>Your health record</h1>
+      <section id="identity" aria-labelledby="identity-heading">
+        <h2 id="identity-heading">Your information</h2>
+        <dl class="identity-grid">
+          <div class="identity-item"><dt>Name</dt><dd id="patient-name">Not recorded</dd></div>
+          <div class="identity-item"><dt>Gender</dt><dd id="patient-gender">Not recorded</dd></div>
+          <div class="identity-item"><dt>Date of birth</dt><dd id="patient-birth-date">Not recorded</dd></div>
+          <div class="identity-item"><dt>Age</dt><dd id="patient-age">Not recorded</dd></div>
+        </dl>
+      </section>
 
-    <section id="results-section" hidden aria-labelledby="results-heading">
-      <h2 id="results-heading">Recent results</h2>
-      <p id="results-loading" class="status" role="status">Loading recent results…</p>
-      <p id="empty-state" class="status" hidden>The sandbox patient has no matching observations.</p>
-      <p id="observation-error" class="status error" role="alert" hidden></p>
-      <dl class="results">
-        <div class="result"><dt>Height</dt><dd id="height-value">Not recorded</dd></div>
-        <div class="result"><dt>Blood pressure</dt><dd id="blood-pressure-value">Not recorded</dd></div>
-        <div class="result"><dt>HDL</dt><dd id="hdl-value">Not recorded</dd></div>
-        <div class="result"><dt>LDL</dt><dd id="ldl-value">Not recorded</dd></div>
-      </dl>
-    </section>
+      <section id="snapshot" aria-labelledby="snapshot-heading">
+        <h2 id="snapshot-heading">Your Maternal Health Snapshot</h2>
+        <p class="intro">Measurements below reflect information available in your health record.</p>
+        <p id="loading" class="status" role="status">Loading your patient information and measurements…</p>
+        <p id="empty-state" class="status" hidden>No matching maternal health observations were found in your available health record.</p>
+        <p id="observation-error" class="status error" role="alert" hidden></p>
+        <dl class="measurement-grid">
+          <div class="measurement"><dt>Blood Pressure</dt><dd id="blood-pressure">Not recorded</dd></div>
+          <div class="measurement"><dt>Heart Rate</dt><dd id="heart-rate">Not recorded</dd></div>
+          <div class="measurement"><dt>Weight</dt><dd id="weight">Not recorded</dd></div>
+          <div class="measurement"><dt>Oxygen Saturation</dt><dd id="oxygen-saturation">Not recorded</dd></div>
+          <div class="measurement"><dt>Body Temperature</dt><dd id="body-temperature">Not recorded</dd></div>
+        </dl>
+      </section>
 
+      <section aria-labelledby="voice-heading">
+        <h2 id="voice-heading">My Voice Matters</h2>
+        <span class="planned">Planned capability</span>
+        <p>MaternalGuard is being designed to help mothers document concerns and communicate with their healthcare teams. Concern reporting and clinical follow-up are not available in this version.</p>
+      </section>
+
+      <section aria-labelledby="care-heading">
+        <h2 id="care-heading">Your Care. Your Voice.</h2>
+        <p class="intro">Future versions aim to help mothers:</p>
+        <ul>
+          <li>Document health concerns.</li>
+          <li>Communicate with their care teams.</li>
+          <li>Track responses and follow-up.</li>
+          <li>Access their maternal health information.</li>
+        </ul>
+        <p>These are planned capabilities. This version displays available patient information and observations only.</p>
+      </section>
+
+      <section class="safety" aria-labelledby="safety-heading">
+        <h2 id="safety-heading">A note about your care</h2>
+        <p>MaternalGuard provides access to health information available in your record. It does not diagnose medical conditions or replace professional medical advice, and it is not continuously monitored by healthcare professionals. If you are experiencing severe or urgent symptoms, seek immediate medical attention rather than waiting for an application response.</p>
+      </section>
+      <p><a href="./" id="sign-out">Sign out</a></p>
+    </div>
     <p id="page-error" class="status error" role="alert" hidden></p>
-    <p id="sign-out-row" hidden><a href="./" id="sign-out">Sign out</a></p>
   </main>
+  <footer><small>MaternalGuard · Your Voice. Your Health. Your Follow-Up.</small></footer>
+
   <script>
     var params = new URLSearchParams(location.search);
     var cameBackFromAuth = params.has("code") || params.has("error") || params.has("state");
 
-    // ready() restores the authorized SMART client, then Patient.read() supplies identity fields.
-    FHIR.oauth2.ready()
-      .then(function (client) {
-        return client.patient.read().then(function (patient) {
-          showPatient(patient);
-          return loadObservations(client, patient);
-        });
-      })
-      .catch(function (error) {
-        if (cameBackFromAuth) {
-          showPageError("We could not load your patient record. Please sign in again. " + errorMessage(error));
-        }
+    // This restores the authorized SMART client and calls Patient.read() for name, gender and birthDate; the student sees identity first and then the maternal measurements.
+    FHIR.oauth2.ready().then(function (client) {
+      return client.patient.read().then(function (patient) {
+        showPatient(patient);
+        return loadObservations(client, patient);
       });
+    }).catch(function (error) {
+      if (cameBackFromAuth) showPageError("We could not load your patient information. Please sign in again. " + errorMessage(error));
+    });
 
     document.getElementById("sign-out").addEventListener("click", function (event) {
       event.preventDefault();
@@ -97,115 +136,106 @@
       location.href = "./";
     });
 
-    // This reads Patient.name, gender and birthDate so the student sees the signed-in patient's identity.
+    // This reads Patient.name, gender and birthDate to show the signed-in patient's identity before results load.
     function showPatient(patient) {
       document.getElementById("signed-out").hidden = true;
-      document.getElementById("record").hidden = false;
-      document.getElementById("results-section").hidden = false;
-      document.getElementById("sign-out-row").hidden = false;
-      document.getElementById("name").textContent = formatName(patient);
-      document.getElementById("gender").textContent = patient.gender || "Not recorded";
-      document.getElementById("birth-date").textContent = patient.birthDate || "Not recorded";
-      document.getElementById("age").textContent = formatAge(patient.birthDate);
+      document.getElementById("signed-in-content").hidden = false;
+      document.getElementById("patient-name").textContent = formatName(patient);
+      document.getElementById("patient-gender").textContent = patient.gender || "Not recorded";
+      document.getElementById("patient-birth-date").textContent = patient.birthDate || "Not recorded";
+      document.getElementById("patient-age").textContent = formatAge(patient.birthDate);
     }
 
-    // This requests only Observation resources for the authorized patient and reads Bundle.entry.resource for matching LOINC codes.
-    // The student sees the latest height, blood pressure, HDL and LDL, with empty values labeled Not recorded.
+    // This requests only Observation records for the authorized patient and reads Bundle.entry.resource (or an individual Observation) for the requested codes.
     function loadObservations(client, patient) {
-      var patientId = patient.id || client.patient.id;
-      var codes = ["8302-2", "85354-9", "8480-6", "8462-4", "2085-9", "13457-7"];
+      var patientId = client.patient.id || patient.id;
+      var codes = ["85354-9", "8480-6", "8462-4", "8867-4", "29463-7", "59408-5", "8310-5"];
       if (!patientId) {
-        showObservationError("We could not identify the signed-in patient to search for results.");
+        showObservationError("We could not identify the signed-in patient to retrieve maternal health measurements.");
         return Promise.resolve();
       }
       var query = "Observation?patient=" + encodeURIComponent(patientId) + "&code=" + encodeURIComponent(codes.join(","));
-      return client.request(query).then(function (bundle) {
-        var observations = bundle && Array.isArray(bundle.entry) ? bundle.entry.map(function (entry) {
-          return entry && entry.resource;
-        }).filter(function (resource) {
-          return resource && resource.resourceType === "Observation" && belongsToPatient(resource, patientId);
-        }) : [];
+      return client.request(query).then(function (result) {
+        var list = result && result.resourceType === "Bundle" && Array.isArray(result.entry)
+          ? result.entry.map(function (entry) { return entry && entry.resource; })
+          : (result && result.resourceType === "Observation" ? [result] : []);
+        var observations = list.filter(function (item) {
+          return item && item.resourceType === "Observation" && belongsToPatient(item, patientId);
+        });
         renderObservations(observations);
       }).catch(function () {
-        showObservationError("We could not load recent results. Your patient identity is still available above.");
+        showObservationError("We could not retrieve maternal health measurements right now. Your patient information remains available above.");
       });
     }
 
-    // This reads Observation.subject.reference to keep only results belonging to the signed-in patient.
-    // The student sees no results from another patient even if a server returns an unexpected entry.
+    // This reads Observation.subject.reference to keep results scoped to the signed-in patient; the student sees no unrelated patient's measurements.
     function belongsToPatient(observation, patientId) {
       var reference = observation.subject && observation.subject.reference;
       return reference === "Patient/" + patientId || reference === patientId;
     }
 
-    // This reads Observation.code, effectiveDateTime/issued and valueQuantity or blood-pressure components.
-    // The student sees the newest available reading for each requested result and its recorded date.
+    // This processes Observation.code, component and valueQuantity fields to fill the five measurement rows or show the no-results message.
     function renderObservations(observations) {
-      document.getElementById("results-loading").hidden = true;
+      document.getElementById("loading").hidden = true;
       if (!observations.length) {
         document.getElementById("empty-state").hidden = false;
         return;
       }
-      var height = latestForCode(observations, "8302-2");
-      var hdl = latestForCode(observations, "2085-9");
-      var ldl = latestForCode(observations, "13457-7");
-      var pressurePanel = latestForCode(observations, "85354-9");
+      var panel = latestForCode(observations, "85354-9");
       var systolic = latestForCode(observations, "8480-6");
       var diastolic = latestForCode(observations, "8462-4");
-      var pressure = pressurePanel ? bloodPressureFromPanel(pressurePanel) : null;
-      if (!pressure || (!pressure.systolic && !pressure.diastolic)) {
-        pressure = {
-          systolic: quantityText(systolic),
-          diastolic: quantityText(diastolic),
-          date: latestDate(systolic) || latestDate(diastolic)
-        };
+      var pressure = panel ? bloodPressureFromPanel(panel) : null;
+      pressure = pressure || { systolic: "", diastolic: "", date: "" };
+      if (!pressure.systolic && systolic) pressure.systolic = quantityText(systolic);
+      if (!pressure.diastolic && diastolic) pressure.diastolic = quantityText(diastolic);
+      if ((!pressure.date || !pressure.systolic || !pressure.diastolic) && (systolic || diastolic)) {
+        pressure.date = pressure.date || laterDate(systolic, diastolic);
       }
-      setResult("height-value", quantityText(height), latestDate(height));
-      var pressureText = pressure && (pressure.systolic || pressure.diastolic)
+      var pressureValue = pressure && (pressure.systolic || pressure.diastolic)
         ? (pressure.systolic || "Not recorded") + " / " + (pressure.diastolic || "Not recorded")
         : "Not recorded";
-      setResult("blood-pressure-value", pressureText, pressure && pressure.date);
-      setResult("hdl-value", quantityText(hdl), latestDate(hdl));
-      setResult("ldl-value", quantityText(ldl), latestDate(ldl));
+      setMeasurement("blood-pressure", pressureValue, pressure && pressure.date);
+      setMeasurement("heart-rate", quantityText(latestForCode(observations, "8867-4")), observationDate(latestForCode(observations, "8867-4")));
+      setMeasurement("weight", quantityText(latestForCode(observations, "29463-7")), observationDate(latestForCode(observations, "29463-7")));
+      setMeasurement("oxygen-saturation", quantityText(latestForCode(observations, "59408-5")), observationDate(latestForCode(observations, "59408-5")));
+      setMeasurement("body-temperature", quantityText(latestForCode(observations, "8310-5")), observationDate(latestForCode(observations, "8310-5")));
     }
 
-    // This reads Observation.code.coding to select the newest resource by effectiveDateTime or issued.
-    // The student sees the most recent observation for the requested code.
+    // This reads Observation.code.coding.code to find a requested measurement and effectiveDateTime, effectivePeriod.start or issued to choose the newest.
     function latestForCode(observations, code) {
-      return observations.filter(function (observation) {
-        return hasCode(observation, code);
-      }).sort(function (a, b) {
-        return dateNumber(b) - dateNumber(a);
-      })[0] || null;
+      return observations.filter(function (observation) { return hasCode(observation, code); })
+        .sort(function (a, b) { return observationTime(b) - observationTime(a); })[0] || null;
     }
 
-    // This reads Observation.code.coding.code to determine whether a result is the requested LOINC observation.
-    // The student sees only the requested measurements on this page.
+    // This reads Observation.code.coding to match a requested LOINC code.
     function hasCode(observation, code) {
       var codings = observation.code && Array.isArray(observation.code.coding) ? observation.code.coding : [];
-      return codings.some(function (coding) { return coding.code === code; });
+      return codings.some(function (coding) { return coding && coding.code === code; });
     }
 
-    // This reads Observation.effectiveDateTime first and issued as a fallback to compare result recency.
-    // The student sees the newest result even when the server returns records out of order.
-    function dateNumber(observation) {
-      var value = observation.effectiveDateTime || observation.issued;
-      var parsed = value ? Date.parse(value) : 0;
-      return Number.isNaN(parsed) ? 0 : parsed;
+    // This reads Observation.effectiveDateTime, effectivePeriod.start and issued to compare observation dates; missing dates sort last.
+    function observationTime(observation) {
+      var effective = observation.effectiveDateTime || (observation.effectivePeriod && observation.effectivePeriod.start) || observation.issued;
+      var time = effective ? Date.parse(effective) : 0;
+      return Number.isNaN(time) ? 0 : time;
     }
 
-    // This reads the effectiveDateTime or issued field to show when a result was recorded.
-    // The student sees no date label when the resource has no usable date.
-    function latestDate(observation) {
+    // This reads the available effectiveDateTime, effectivePeriod.start or issued field to show a measurement date.
+    function observationDate(observation) {
       if (!observation) return "";
-      var value = observation.effectiveDateTime || observation.issued;
+      var value = observation.effectiveDateTime || (observation.effectivePeriod && observation.effectivePeriod.start) || observation.issued;
       if (!value) return "";
-      var parsed = new Date(value);
-      return Number.isNaN(parsed.getTime()) ? "" : "Date: " + parsed.toLocaleDateString();
+      var date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "" : "Date: " + date.toLocaleDateString();
     }
 
-    // This reads valueQuantity.value and valueQuantity.unit, with code as a unit fallback.
-    // The student sees the measurement number and unit together, or Not recorded when absent.
+    // This reads the date fields on separate systolic and diastolic Observations and shows the later available result date.
+    function laterDate(first, second) {
+      var selected = observationTime(first || {}) >= observationTime(second || {}) ? first : second;
+      return observationDate(selected);
+    }
+
+    // This reads valueQuantity.value and unit from an Observation to show its measurement or Not recorded.
     function quantityText(observation) {
       var quantity = observation && observation.valueQuantity;
       if (!quantity || quantity.value === undefined || quantity.value === null) return "Not recorded";
@@ -213,28 +243,21 @@
       return String(quantity.value) + (unit ? " " + unit : "");
     }
 
-    // This reads component.code.coding and each component.valueQuantity from a blood-pressure panel.
-    // The student sees systolic and diastolic values in that order with the panel's date.
+    // This reads Observation.component.code.coding and component.valueQuantity for systolic and diastolic blood pressure in a panel.
     function bloodPressureFromPanel(observation) {
       var components = Array.isArray(observation.component) ? observation.component : [];
-      var systolic = components.filter(function (component) { return componentHasCode(component, "8480-6"); })[0];
-      var diastolic = components.filter(function (component) { return componentHasCode(component, "8462-4"); })[0];
-      return {
-        systolic: componentQuantityText(systolic),
-        diastolic: componentQuantityText(diastolic),
-        date: latestDate(observation)
-      };
+      var sys = components.filter(function (component) { return componentHasCode(component, "8480-6"); })[0];
+      var dia = components.filter(function (component) { return componentHasCode(component, "8462-4"); })[0];
+      return { systolic: componentQuantityText(sys), diastolic: componentQuantityText(dia), date: observationDate(observation) };
     }
 
-    // This reads component.code.coding.code to find a systolic or diastolic blood-pressure component.
-    // The student sees each component placed in its correct blood-pressure position.
+    // This reads component.code.coding.code to identify the systolic or diastolic component of a blood-pressure panel.
     function componentHasCode(component, code) {
       var codings = component && component.code && Array.isArray(component.code.coding) ? component.code.coding : [];
-      return codings.some(function (coding) { return coding.code === code; });
+      return codings.some(function (coding) { return coding && coding.code === code; });
     }
 
-    // This reads component.valueQuantity.value and unit for a blood-pressure panel component.
-    // The student sees the number and unit together or Not recorded if that component is absent.
+    // This reads component.valueQuantity.value and unit to show a panel component's number and unit.
     function componentQuantityText(component) {
       var quantity = component && component.valueQuantity;
       if (!quantity || quantity.value === undefined || quantity.value === null) return "";
@@ -242,48 +265,29 @@
       return String(quantity.value) + (unit ? " " + unit : "");
     }
 
-    // This puts a result value and its date into the visible result row.
-    // The student sees Not recorded when the measurement is missing.
-    function setResult(id, value, date) {
+    // This writes the measurement and optional date into its visible row; the student sees Not recorded if there is no usable value.
+    function setMeasurement(id, value, date) {
       var node = document.getElementById(id);
       node.textContent = value || "Not recorded";
       if (date) {
         var dateNode = document.createElement("span");
-        dateNode.className = "result-date";
+        dateNode.className = "date";
         dateNode.textContent = date;
         node.appendChild(dateNode);
       }
     }
 
-    // This reads an error's message field when available and supplies plain language for failures.
-    // The student sees a readable explanation instead of a blank page.
-    function errorMessage(error) {
-      return error && error.message ? error.message : "Please try again.";
-    }
-
-    // This writes a plain-language observation search error while leaving patient identity visible.
-    // The student sees their identity and a clear message if results cannot be loaded.
-    function showObservationError(message) {
-      document.getElementById("results-loading").hidden = true;
-      var node = document.getElementById("observation-error");
-      node.hidden = false;
-      node.textContent = message;
-    }
-
-    // This reads the Patient.name list, preferring an official entry and checking optional given/family fields.
-    // The student sees a safe display name or Name not recorded.
+    // This reads Patient.name as a list and safely checks text, given and family fields to display the patient's name.
     function formatName(patient) {
       var names = Array.isArray(patient.name) ? patient.name : [];
-      var name = names.filter(function (item) { return item.use === "official"; })[0] || names[0];
+      var name = names.filter(function (item) { return item && item.use === "official"; })[0] || names[0];
       if (!name) return "Name not recorded";
       if (name.text) return name.text;
       var given = Array.isArray(name.given) ? name.given.join(" ") : "";
-      var family = name.family || "";
-      return (given + " " + family).trim() || "Name not recorded";
+      return (given + " " + (name.family || "")).trim() || "Name not recorded";
     }
 
-    // This reads Patient.birthDate to calculate age using the current date.
-    // The student sees age in years or Not recorded when birth date is missing.
+    // This reads Patient.birthDate to calculate the patient's age in years or show Not recorded.
     function formatAge(birthDate) {
       if (!birthDate) return "Not recorded";
       var parts = birthDate.split("-");
@@ -296,9 +300,22 @@
       return age + " years";
     }
 
-    // This displays the patient-record loading error as text.
-    // The student sees a readable sign-in or patient-read error instead of a blank page.
+    // This reads an error message when available and displays a plain-language Patient loading error.
+    function errorMessage(error) {
+      return error && error.message ? error.message : "Please try again.";
+    }
+
+    // This displays an Observation request error while preserving the patient's identity on screen.
+    function showObservationError(message) {
+      document.getElementById("loading").hidden = true;
+      var node = document.getElementById("observation-error");
+      node.hidden = false;
+      node.textContent = message;
+    }
+
+    // This displays a plain-language error when SMART session restoration or Patient.read fails.
     function showPageError(message) {
+      document.getElementById("loading").hidden = true;
       var node = document.getElementById("page-error");
       node.hidden = false;
       node.textContent = message;
